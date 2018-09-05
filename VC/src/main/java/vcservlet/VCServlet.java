@@ -192,7 +192,7 @@ public class VCServlet {
             log.log(Level.INFO, "** GRAPH_ID="+graphID);
             DBQuery dbquery = new DBQuery();
             String analysis = dbquery.getAnalysis(graphID);
-            if(analysis != null)  return Response.ok().entity(analysis).build();
+            if(analysis != null)  return Response.ok().entity(analysis).build(); 
             else return Response.status(Response.Status.NOT_FOUND).build();
         }
         else return Response.status(Response.Status.NOT_FOUND).build();
@@ -424,6 +424,7 @@ public class VCServlet {
         VCForkControl vcControl = new VCForkControl();
         String out = vcControl.evalJSONEdge(json);
         return out;
+            
     }
 
     /**

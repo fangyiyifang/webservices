@@ -157,6 +157,11 @@ hr {
   stroke: rgb(0, 0, 0);
 }
 
+.node-blacklight {
+  stroke-width: 5px;
+  stroke: #BDBDBD;
+}
+
 .node-eval {
   stroke-width: 3px;
 }

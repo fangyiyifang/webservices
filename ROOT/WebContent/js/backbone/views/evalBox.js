@@ -28,7 +28,7 @@ app.EvalBoxView = Backbone.View.extend({
   evaluate: function() {
 
     app.evalBoxView.clear();
-
+   
     var param = {
       "action": "eval",
       "graph": {

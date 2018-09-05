@@ -387,11 +387,13 @@ public class DBQuery {
             jsonGraph.put("parentgraphid", (String) graphMeta.get(0).get("parentgraphid"));            
             
             ArrayList<HashMap<String, Object>> resultNodes = dbcn.execSQL(getNodesSql);
-            JSONArray jsonNodesArray = getResultListJSON(resultNodes);       
+            JSONArray jsonNodesArray = getResultListJSON(resultNodes); 
             jsonGraph.put("nodes", jsonNodesArray);           
             
             ArrayList<HashMap<String, Object>> resultEdges = dbcn.execSQL(getEdgesSql);
             JSONArray jsonEdgesArray = getResultListJSON(resultEdges);
+            System.out.println(jsonEdgesArray);
+            
             jsonGraph.put("edges", jsonEdgesArray);
 
             return jsonGraph.toString();

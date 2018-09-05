@@ -32,6 +32,7 @@ public class VControl {
      */
     public HashMap onAddEdges(HashMap map) {
 
+        String fakeEdge="edge_";
         String toID = map.get("target").toString();
         String fromID = map.get("source").toString();
         String formEdgeID = null;
@@ -48,13 +49,15 @@ public class VControl {
         if(map.get("isLocked") != null){
             Boolean.parseBoolean(map.get("isLocked").toString());
         }
-
-        DBQuery dbQuery = new DBQuery();
-        dbQuery.insertEdge(toID, fromID, formEdgeID, edgeID, graphID, isLocked);
-
-        map = new HashMap();
-        map.put("response","success");
-
+        if(edgeID.indexOf(fakeEdge)>-1){
+            
+        }else{
+            DBQuery dbQuery = new DBQuery();
+            dbQuery.insertEdge(toID, fromID, formEdgeID, edgeID, graphID, isLocked);
+            map = new HashMap();
+            map.put("response","success");
+        }
+        
         return map;
     }
 

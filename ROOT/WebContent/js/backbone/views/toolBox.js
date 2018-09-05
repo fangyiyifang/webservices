@@ -24,9 +24,11 @@ app.ToolBoxView = Backbone.View.extend({
     // 'click .btn-sm': 'createNode',
     'dragstart .btn-sm': 'dataTransfer',
     'dragend .btn-sm': 'createNode',
+    'click #arrow':'clickArrow',
 
     'click #commitGraph': 'commitGraph',
-    'click #checkoutGraph': 'checkoutGraph'
+    'click #checkoutGraph': 'checkoutGraph',
+    'click #viewAllContent':'viewAll'
   },
 
   initialize: function() {
@@ -46,6 +48,7 @@ app.ToolBoxView = Backbone.View.extend({
   },
 
   callBrowseBox: function(obj){
+//      console.log('............................');
 
     // Gets the list of analysis from the server
     app.browseBoxView.getAnalysisList();
@@ -84,6 +87,14 @@ app.ToolBoxView = Backbone.View.extend({
 
     // re-start changed graph
     chart.simulation = restart_simulation(chart.simulation, restart);
+  },
+  
+  clickArrow:function(event){
+      arrowSituation = true;
+//      if(arrowSituation){
+//          app.workBoxView.getTwoFocus(event);
+//      }
+      console.log('......................................');
   },
 
   save: function() {
@@ -215,6 +226,8 @@ app.ToolBoxView = Backbone.View.extend({
   },
 
   restartSimulation: function() {
+      
+//      console.log(chart.nodes);
 
     var length = (chart.nodes) ? chart.nodes.length : 15;
 
@@ -227,7 +240,7 @@ app.ToolBoxView = Backbone.View.extend({
       chart.nodes.forEach(function(d) {
         d.fx = null;
         d.fy = null;
-      })
+      });
     }
   },
 
@@ -241,5 +254,8 @@ app.ToolBoxView = Backbone.View.extend({
 
   checkoutGraph: function(event){
     app.browseBoxView.toggleViewMode(false);
+  },
+  viewAll:function(event){
+      app.browseBoxView.viewAllNodes(true);
   }
 });

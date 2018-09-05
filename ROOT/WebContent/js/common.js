@@ -1,6 +1,7 @@
 /**
  * global functions for cispaces
  */
+var graphWordM=new Map();
 function generateUUID() {
   var d = new Date().getTime();
 
@@ -146,6 +147,7 @@ function alertMessage(obj, msg) {
 }
 
 function parseText(content, length) {
+//    deal with text length
 
   if(!length && typeof(length) == "undefined"){
     length = slider_wb.slider('getValue');
@@ -160,4 +162,27 @@ function parseText(content, length) {
   } else {
     return "";
   }
+}
+
+function keyText(content){
+    var regularWordArr=['a','an','the','this','that','there','here','is','are','was','were','be',
+        'have','has','had','in','by','of','at','on','and','between','among','The','There','An'];
+    var contentArr=content.split(' ');
+    var newContent;
+//    var newContentArr=[];
+//    console.log(contentArr);
+    if(contentArr.length<3){
+        newContent=contentArr.join(' ');
+        return newContent;
+    }else{
+        for(var c=0;c<regularWordArr.length;c++){
+            if(contentArr.indexOf(regularWordArr[c])>-1){
+//                newContentArr.push(regularWordArr[c]);
+                deleteArrEle(contentArr,regularWordArr[c]);
+            }
+        }
+        newContent=contentArr.join(' ');
+//        newContent=newContentArr.join(' ');
+        return newContent;
+    }  
 }

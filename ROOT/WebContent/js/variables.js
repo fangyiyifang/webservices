@@ -10,6 +10,16 @@ var view_flag = false;
 
 var slider_wb = null;
 
+var arrowSituation = false;
+var showNode = false;
+//showNodeM=new Map();
+var nodeClickID = null;
+
+
+
+
+//var targetNodeInShow=[];
+
 /*
 	object for chart
 */

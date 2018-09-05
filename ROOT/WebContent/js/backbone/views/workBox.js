@@ -1,22 +1,29 @@
 var app = app || {};
+var objFirstClick=[];
+var objClick;
+var showObjClick=[];
+
+
 
 /**
  * WorkBox
  * ---------------------------------
  * the UI for 'workBox'
  */
-
+var showNode = false;
 app.WorkBoxView = Backbone.View
   .extend({
     el: '#d3-area-chart',
 
     events: {
-      'click .node': 'viewDetails',
+      'click .node': 'getTwoFocus',
       'dblclick .node': 'popupNodeView',
-      'contextmenu .node': 'onRightClick'
+      'contextmenu .node': 'onRightClick',
+//      'click .node':'singleClick'
     },
 
     initialize: function() {
+//        
 
       /* -------------------- initialisation for drawing a graph -------------------- */
       var area_id = this.el.id;
@@ -52,7 +59,7 @@ app.WorkBoxView = Backbone.View
           url: remote_server + "/PROVSIMP/rest/ProcProv",
           data: JSON.stringify(param),
           success: function(data) {
-            console.log(data);
+//            console.log(data);
 
           },
           error: function(e) {
@@ -61,9 +68,9 @@ app.WorkBoxView = Backbone.View
               var error_msg = responseText.split('h1>')[1];
 
               // when evalutation is failed, the reason will be shown
-              console.log(error_msg.substring(0, error_msg.length - 2));
+//              console.log(error_msg.substring(0, error_msg.length - 2));
             } else {
-              console.log(e);
+//              console.log(e);
             }
           }
         });
@@ -80,7 +87,7 @@ app.WorkBoxView = Backbone.View
         formatter: function(value) {
           if (chart.nodes) {
             chart.nodes.forEach(function(d) {
-              $("#draw_" + d.nodeID + ' text').html(parseText(d.text, value));
+              $("#draw_" + d.nodeID + ' text').html(parseText(keyText(d.text), value));
             });
           }
           return value;
@@ -91,6 +98,8 @@ app.WorkBoxView = Backbone.View
     },
 
     onRightClick: function(obj) {
+        
+//       console.log('........................');
 
       // return native menu if pressing control
       if (obj.ctrlKey) return;
@@ -138,32 +147,8 @@ app.WorkBoxView = Backbone.View
                 self.changeLinkFrom(target);
               }
 
-            } else if (opt.currentTarget.id == "link-from") {
-              self.changeLinkFrom(target);
-            } else if (opt.currentTarget.id == "link-to") {
-              var attr = null;
-
-              if (link_from == target) {
-                // if the first point and the second point are same, shows an error message
-                alertMessage(obj, "You can't choose the same node for connection.");
-              } else {
-                // create a new model of edge
-                attr = self.createEdge(link_from, target);
-
-                if (attr) {
-                  // draw the node
-                  chart.edge = addNewEdge(attr);
-
-                  // re-start graph
-                  chart.simulation = restart_simulation(chart.simulation, true);
-
-                  self.changeLinkFrom(target);
-                } else {
-                  // if the edge connects between i-nodes(Info, Claim), shows an error message
-                  alertMessage(obj, "This connection looks not correct. You should choose at least one between Pref, Con or Pro.");
-                }
-              }
-            } else if (opt.currentTarget.id == "cancel-link") {
+            }  
+            else if (opt.currentTarget.id == "cancel-link") {
               if (!_.isEmpty(link_from)) {
                 self.changeLinkFrom(target);
               }
@@ -174,7 +159,6 @@ app.WorkBoxView = Backbone.View
 
       return false;
     },
-
     changeLinkFrom: function(target) {
       if (!link_from) {
         // save id in the flag of first point
@@ -186,7 +170,7 @@ app.WorkBoxView = Backbone.View
         // changes styles and initialize the flag of the first point
         $("#draw_" + link_from + " rect").toggleClass("node-highlight");
 
-        link_from = null;
+//        link_from = null;
       }
 
       $("#link-from").toggleClass("disabled");
@@ -195,25 +179,57 @@ app.WorkBoxView = Backbone.View
       return link_from;
     },
 
-    viewDetails: function(obj) {
-      var id = obj.currentTarget.id;
-      id = id.substr(5);
-
-      var node = app.Nodes.get(id).attributes;
-
-      $("#details-node .details-nodeID").text(node.nodeID);
-      $("#details-node .details-dtg").text(node.dtg);
-      $("#details-node .details-source").text(node.source);
-      $("#details-node .details-text").text(node.text);
-      $("#details-node .details-eval").text(node.eval);
-      $("#details-node .details-commit").text(node.commit);
-      $("#details-node .details-uncert").text(node.uncert);
-
-      $("#details-node").show();
-      $("#details-tweet").hide();
-
-      return id;
-    },
+    getTwoFocus: function(obj) {
+    
+      if(arrowSituation==true){ 
+          var index = obj.currentTarget.__data__.index;
+          var target = obj.currentTarget.id.substr(5);
+          var self = this;
+          if(link_from==null){
+              console.log('link_from is null');
+              link_from=target;
+              self.changeLinkFrom(target);
+          }else{
+              console.log('link_from has value');
+              if(target==link_from){
+                  alertMessage(obj, "You can't choose the same node for connection.");
+              }else{
+                  // create a new model of edge
+                  attr = self.createEdge(link_from, target);
+                  if (attr) {
+                      // draw the node
+                      chart.edge = addNewEdge(attr);
+                      // re-start graph
+                      chart.simulation = restart_simulation(chart.simulation, true);
+                      self.changeLinkFrom(target);
+                      arrowSituation=false;
+                      link_from=null;
+                  } else {
+                      // if the edge connects between i-nodes(Info, Claim), shows an error message
+                      alertMessage(obj, "This connection looks not correct. \n\
+                                      You should choose at least one between Pref, Con or Pro.");
+                }
+          }
+      }
+  }
+  else{
+     if(showObjClick.indexOf(obj.currentTarget.id.substr(5))>-1){
+         hideNode(obj);
+         deleteArrEle(showObjClick,obj.currentTarget.id.substr(5));
+     }else{
+         showHideNode(obj);
+         showObjClick.push(obj.currentTarget.id.substr(5));
+     }
+//     if(showNode==false){
+//        showHideNode(obj);
+//        
+//        showNode=true;
+//    }else{
+//        hideNode(obj);
+//        showNode=false;
+//    }
+     
+  }},
 
     popupNodeView: function(obj) {
 
@@ -359,14 +375,16 @@ app.WorkBoxView = Backbone.View
       return attr;
     },
 
-    createNodeModelFromData: function(data) {
 
+    createNodeModelFromData: function(data) {
+     
       var attr = {
         id: data['nodeID'],
         source: data['source'],
         uncert: data['uncert'],
         eval: data['eval'],
         text: data['text'],
+//        text: wordText,
         input: data['input'],
         dtg: data['dtg'],
         commit: data['commit'],
@@ -375,7 +393,6 @@ app.WorkBoxView = Backbone.View
         annot: data['annot'],
         graphID: data['graphID']
       };
-
       // creates model of the node in the collection and sends POST request to a back-end service
       app.Nodes.create(attr);
 
@@ -437,7 +454,8 @@ app.WorkBoxView = Backbone.View
       };
 
       // creates model of the edge in the collection and sends POST request to a back-end service
-      app.Edges.create(attr, {
+       
+        app.Edges.create(attr, {
         type: 'POST'
       });
 
@@ -447,8 +465,14 @@ app.WorkBoxView = Backbone.View
     createEdgeModelFromData: function(data) {
 
       // designates the edge's class using the type of connected nodes
-      var target = data['target'];
+        var target = data['target'];
+        if(typeof target=='object'){
+            target=target.nodeID;
+        }
       var source = data['source'];
+      if(typeof source=='object'){
+          source=source.nodeID;
+      }
 
       var className = 'edge';
       var targetNode = $('#draw_' + target).children()[0];
@@ -464,6 +488,7 @@ app.WorkBoxView = Backbone.View
       }
 
       var sourceNode = $('#draw_' + source).children()[0];
+//      console.log(sourceNode);
       if (sourceNode) {
         var sourceNodeClassName = sourceNode.className.baseVal;
         if (sourceNodeClassName.includes("pro-node")) {
@@ -491,8 +516,8 @@ app.WorkBoxView = Backbone.View
       };
 
       // creates model of the edge in the collection and sends POST request to a back-end service
-      app.Edges.create(attr);
-
+      
+        app.Edges.create(attr);
       return className;
     },
 

@@ -15,7 +15,7 @@ app.BrowseBoxView = Backbone.View.extend({
     'click #importFromFile': 'selectFile',
     'change #myFile': 'importFromFile',
 
-    'click .btn-view': 'viewAnalysis',
+    'click .btn-view': 'viewPartAnalysis',
     'click .btn-checkout': 'viewAnalysis',
 
     'click .btn-export': 'exportToFile',
@@ -106,12 +106,15 @@ app.BrowseBoxView = Backbone.View.extend({
     Backbone.ajax({
       type: 'GET',
       url: remote_server + '/VC/rest/analysis/' + graphID,
-      success: function(response, status, xhr) {
+      success: function(response, status, xhr) {//response 
         // change the type of annot
-        if(response.nodes){
+//        var responseNodes=nodePro(response.nodes,response.edges);
+//        console.log(response);
+          if(response.nodes){
           response.nodes.forEach(function(d){
             try{
-            d.annot = JSON.parse(d.annot);
+            d.annot = JSON.parse(d.annot);            
+            console.log(d.annot);
           } catch(error){
             console.log(error);
           }
@@ -126,8 +129,8 @@ app.BrowseBoxView = Backbone.View.extend({
     });
   },
 
-  getAnalysisList: function() {
-    var userID = readCookie('user_id');
+  getAnalysisList: function() {    
+      var userID = readCookie('user_id');
     var self = this;
 
     Backbone.ajax({
@@ -156,17 +159,6 @@ app.BrowseBoxView = Backbone.View.extend({
     var div_heading = $("<div></div>", {
       'class': "panel-heading"
     }).appendTo(div_panel);
-
-    /*
-    $("<label></label>", {
-      'text': "graphID",
-      'style': "margin: 5px 10px"
-    }).appendTo($("<div></div>", {
-      'class': "row"
-    }).appendTo(div_heading)).after($("<span></span>", {
-      'text': analysis.graphID
-    }));
-    */
 
     $("<label></label>", {
       'text': "Title:",
@@ -225,9 +217,7 @@ app.BrowseBoxView = Backbone.View.extend({
   },
 
   toggleViewMode: function(_view_flag) {
-
     view_flag = _view_flag;
-
     if (view_flag) {
       // If a user click [View] button, the user should not be able to edit the graph
       $("#info").hide();
@@ -263,9 +253,9 @@ app.BrowseBoxView = Backbone.View.extend({
     }
   },
 
-  viewAnalysis: function(event) {
+  viewPartAnalysis: function(event) {
 
-    var graphID = event.target.attributes.name.value.replace("btn_", "");
+    graphID = event.target.attributes.name.value.replace("btn_", "");
 
     this.toggleViewMode((event.target.attributes.class.value.indexOf("view") > 0));
 
@@ -277,8 +267,7 @@ app.BrowseBoxView = Backbone.View.extend({
         // initialises a workbox
         $("#row-workbox").show();
         $("#row-browsebox").hide();
-        app.toolBoxView.$el.show();
-
+        app.toolBoxView.$el.show(); 
         app.workBoxView.clearWorkBox();
 
         // saves the meta data of the graph
@@ -286,10 +275,124 @@ app.BrowseBoxView = Backbone.View.extend({
         chart.title = data['title'];
         chart.desciption = data['description'];
         chart.date = data['timest'];
+     
+        var nodes = nodePro(data['nodes'],data['edges']);
+        var hideEdges=getHideEdge(nodes,data['nodes'],data['edges']);
+        var hideNodes=getHideNode(nodes,data['nodes'],data['edges']);
+        var edges1 = edgePro(nodes,data['edges']);
+        var edges2=[];
+        
+        
+        hideEdges.forEach(function(value,key,hideEdges){
+          var attr = {
+        edgeID:'edge_'+key,
+//        edgeID:'',
+        formedgeid:"null",
+        graphID:chart.graphID,
+        islocked:"false",
+        source:key,
+        target:value
+      };
+          app.Edges.create(attr);
+            edges2.push(attr);  
+       
+      });
 
-        var nodes = data['nodes'];
-        var edges = data['edges'];
+      // creates model of the edge in the collection and sends POST request to a back-end service      
+        var edges=edges1.concat(edges2);
 
+        // set up simulations for force-directed graphs
+        var ret_simulation = set_simulation(15, chart.svg.width, chart.svg.height);
+        push_node_style_data(ret_simulation);
+
+        // the simulation used when drawing a force-directed graph
+        chart.simulation = ret_simulation.simulation;
+       
+
+        var ret_graph = draw(nodes, edges, chart);
+        push_graph_data(ret_graph);
+
+        chart.simulation = restart_simulation(chart.simulation, false);
+//        console.log(chart.nodes);
+
+        $("#saveProgress").attr("disabled", true);
+
+        $("#span-graphTitle").text("[" + chart.title + "]");
+      } else {
+        alert(result);
+        return ("Fail");
+      }
+    });
+  },
+  viewAnalysis: function(event) {
+      graphID = event.target.attributes.name.value.replace("btn_", "");
+      // If a user click [View] button, the user should not be able to edit the graph
+      this.getAnalysis(graphID, function(data) {
+      // validates the json data
+      // var result = validateFile(data);
+      var result = "success";
+      if (result == 'success') {
+        // initialises a workbox
+        $("#row-workbox").show();
+        $("#row-browsebox").hide();
+        app.toolBoxView.$el.show(); 
+        app.workBoxView.clearWorkBox();
+
+        // saves the meta data of the graph
+        chart.graphID = data['graphID'];
+        chart.title = data['title'];
+        chart.desciption = data['description'];
+        chart.date = data['timest'];
+         var nodes = data['nodes'];
+         var edges=data['edges'];
+           
+        // set up simulations for force-directed graphs
+        var ret_simulation = set_simulation(15, chart.svg.width, chart.svg.height);
+        push_node_style_data(ret_simulation);
+         // the simulation used when drawing a force-directed graph
+        chart.simulation = ret_simulation.simulation;
+
+        var ret_graph = draw(nodes, edges, chart);
+        push_graph_data(ret_graph);
+
+        // start simulation for displaying graphsv
+        chart.simulation = restart_simulation(chart.simulation, false);
+        console.log(chart.nodes);
+
+        $("#saveProgress").attr("disabled", true);
+
+        $("#span-graphTitle").text("[" + chart.title + "]");
+      } else {
+        alert(result);
+        return ("Fail");
+      }
+    });
+    
+  },
+  viewAllNodes: function(_view_flag) {
+      
+       view_flag = _view_flag;
+    if (view_flag) {
+      // If a user click [View] button, the user should not be able to edit the graph
+      this.getAnalysis(graphID, function(data) {
+      // validates the json data
+      // var result = validateFile(data);
+      var result = "success";
+      if (result == 'success') {
+        // initialises a workbox
+        $("#row-workbox").show();
+        $("#row-browsebox").hide();
+        app.toolBoxView.$el.show(); 
+        app.workBoxView.clearWorkBox();
+
+        // saves the meta data of the graph
+        chart.graphID = data['graphID'];
+        chart.title = data['title'];
+        chart.desciption = data['description'];
+        chart.date = data['timest'];
+         var nodes = data['nodes'];
+         var edges=data['edges'];
+           
         // set up simulations for force-directed graphs
         var ret_simulation = set_simulation(15, chart.svg.width, chart.svg.height);
         push_node_style_data(ret_simulation);
@@ -302,6 +405,7 @@ app.BrowseBoxView = Backbone.View.extend({
 
         // start simulation for displaying graphsv
         chart.simulation = restart_simulation(chart.simulation, false);
+        console.log(chart.nodes);
 
         $("#saveProgress").attr("disabled", true);
 
@@ -311,6 +415,39 @@ app.BrowseBoxView = Backbone.View.extend({
         return ("Fail");
       }
     });
+      
+      $("#info").hide();
+      $("#claim").hide();
+      $("#pref").hide();
+      $("#con").hide();
+      $("#pro").hide();
+
+      $("#delete-node").addClass("disabled");
+      $("#cancel-link").addClass("disabled");
+
+      $("#commitGraph").hide();
+      $("#checkoutGraph").show();
+
+      $("#span-viewMode").text("(View Only)");
+    } else {
+      $("#info").show();
+      $("#claim").show();
+      $("#pref").show();
+      $("#con").show();
+      $("#pro").show();
+
+      $("#delete-node").removeClass("disabled");
+      $("#link-from").removeClass("disabled");
+      $("#cancel-link").removeClass("disabled");
+
+      $("#commitGraph").show();
+      $("#checkoutGraph").hide();
+      $("#span-viewMode").text("");
+  }
+
+
+    
+      
   },
 
   selectFile: function() {
